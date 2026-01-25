@@ -1,6 +1,7 @@
 package com.example.weatherapp
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,12 +43,20 @@ import androidx.compose.ui.unit.sp
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenApp() {
-    SearchScreen()
+    SearchScreen(onBack = {}, onCitySelected = {})
 }
 
 @Composable
-fun SearchScreen() {
+fun SearchScreen(
+    onBack: () -> Unit,
+    onCitySelected: (String) -> Unit
+) {
     val queryState = remember { mutableStateOf("") }
+    val onCityClick = { city: String ->
+        queryState.value = city
+        onCitySelected(city)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,19 +76,21 @@ fun SearchScreen() {
     ) {
         SearchHeader(
             query = queryState.value,
-            onQueryChange = { queryState.value = it }
+            onQueryChange = { queryState.value = it },
+            onBack = onBack
         )
         Spacer(modifier = Modifier.height(18.dp))
-        SearchHistoryCard()
+        SearchHistoryCard(onCityClick = onCityClick)
         Spacer(modifier = Modifier.height(16.dp))
-        PopularCitiesCard()
+        PopularCitiesCard(onCityClick = onCityClick)
     }
 }
 
 @Composable
 private fun SearchHeader(
     query: String,
-    onQueryChange: (String) -> Unit
+    onQueryChange: (String) -> Unit,
+    onBack: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -88,7 +99,8 @@ private fun SearchHeader(
         Box(
             modifier = Modifier
                 .size(38.dp)
-                .background(Color(0x6AD6E8F6), shape = CircleShape),
+                .background(Color(0x6AD6E8F6), shape = CircleShape)
+                .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -127,7 +139,7 @@ private fun SearchHeader(
 }
 
 @Composable
-private fun SearchHistoryCard() {
+private fun SearchHistoryCard(onCityClick: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -168,19 +180,21 @@ private fun SearchHistoryCard() {
             SearchListItem(
                 title = "Los Angeles, CA",
                 highlight = false,
-                showRemove = false
+                showRemove = false,
+                onClick = { onCityClick("Los Angeles, CA") }
             )
             SearchListItem(
                 title = "New York, NY",
                 highlight = true,
-                showRemove = true
+                showRemove = true,
+                onClick = { onCityClick("New York, NY") }
             )
         }
     }
 }
 
 @Composable
-private fun PopularCitiesCard() {
+private fun PopularCitiesCard(onCityClick: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -199,13 +213,13 @@ private fun PopularCitiesCard() {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            SearchListItem(title = "San Francisco, CA")
-            SearchListItem(title = "New York, NY")
-            SearchListItem(title = "Los Angeles, CA", highlight = true)
-            SearchListItem(title = "Chicago, IL")
-            SearchListItem(title = "Miami, FL")
-            SearchListItem(title = "Seattle, WA")
-            SearchListItem(title = "Austin, TX")
+            SearchListItem(title = "San Francisco, CA", onClick = { onCityClick("San Francisco, CA") })
+            SearchListItem(title = "New York, NY", onClick = { onCityClick("New York, NY") })
+            SearchListItem(title = "Los Angeles, CA", highlight = true, onClick = { onCityClick("Los Angeles, CA") })
+            SearchListItem(title = "Chicago, IL", onClick = { onCityClick("Chicago, IL") })
+            SearchListItem(title = "Miami, FL", onClick = { onCityClick("Miami, FL") })
+            SearchListItem(title = "Seattle, WA", onClick = { onCityClick("Seattle, WA") })
+            SearchListItem(title = "Austin, TX", onClick = { onCityClick("Austin, TX") })
         }
     }
 }
@@ -214,13 +228,15 @@ private fun PopularCitiesCard() {
 private fun SearchListItem(
     title: String,
     highlight: Boolean = false,
-    showRemove: Boolean = false
+    showRemove: Boolean = false,
+    onClick: () -> Unit
 ) {
     val background = if (highlight) Color(0xFFE6F0FF) else Color.Transparent
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(background, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -56,10 +56,11 @@ fun WeatherAppScreen(
             .navigationBarsPadding()
             .imePadding()
     ) {
-        EarthIconLayout()
-        SearchBarLayout(onLocationClick)
+    EarthIconLayout()
+        SearchBarLayout(selectedCity, onLocationClick)
         TopWeatherInfo()
         HourlyWeatherInfo()
+
         WeatherAdditionalInfo()
         WeaklyForecast()
     }
@@ -85,7 +86,7 @@ private fun ColumnScope.EarthIconLayout() {
 }
 
 @Composable
-private fun SearchBarLayout(onLocationClick: () -> Unit) {
+private fun SearchBarLayout(selectedCity: String, onLocationClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth(),
@@ -111,7 +112,7 @@ private fun SearchBarLayout(onLocationClick: () -> Unit) {
             Text(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp), text = "Los Angeles, CA", color = Color.White
+                    .padding(horizontal = 16.dp), text = selectedCity, color = Color.White
             )
             Icon(
                 modifier = Modifier
@@ -133,11 +134,12 @@ private fun SearchBarLayout(onLocationClick: () -> Unit) {
                 contentDescription = null
             )
             Text(
-                text = "Los Angeles, CA", color = Color.White
+                text = selectedCity, color = Color.White
             )
         }
     }
 }
+
 
 @Composable
 private fun TopWeatherInfo() {
