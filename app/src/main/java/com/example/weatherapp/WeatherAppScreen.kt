@@ -1,5 +1,6 @@
-package com.example.weatherapp
+﻿package com.example.weatherapp
 
+import android.widget.ProgressBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +19,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,9 +40,11 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun WeatherAppScreen(
-    selectedCity: String,
+    weather: WeatherState,
+
     onLocationClick: () -> Unit
-) {
+)
+{
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,13 +61,24 @@ fun WeatherAppScreen(
             .navigationBarsPadding()
             .imePadding()
     ) {
-    EarthIconLayout()
-        SearchBarLayout(selectedCity, onLocationClick)
-        TopWeatherInfo()
-        HourlyWeatherInfo()
-
+        if (weather.progressBar) {
+            LoadingExamples()
+        }
+        else {
+        EarthIconLayout()
+        SearchBarLayout(weather.city, onLocationClick)
+        TopWeatherInfo(weather.temperature, weather.weather, weather.high, weather.low)
+        HourlyWeatherInfo(weather.hForecast)
         WeatherAdditionalInfo()
         WeaklyForecast()
+        }
+    }
+}
+
+@Composable
+fun LoadingExamples() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
     }
 }
 
@@ -99,7 +115,7 @@ private fun SearchBarLayout(selectedCity: String, onLocationClick: () -> Unit) {
                 .height(50.dp)
                 .background(Color(0x9ACAE1E7), shape = RoundedCornerShape(16.dp))
                 .padding(horizontal = 16.dp)
-                .clickable{onLocationClick()},
+                .clickable { onLocationClick() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -142,7 +158,7 @@ private fun SearchBarLayout(selectedCity: String, onLocationClick: () -> Unit) {
 
 
 @Composable
-private fun TopWeatherInfo() {
+private fun TopWeatherInfo(temperature: Int, weather: String, high: String, low: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth(),
@@ -154,26 +170,31 @@ private fun TopWeatherInfo() {
             tint = Color.White,
             contentDescription = null
         )
-        Text(text = "72°", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 50.sp)
+        Text(
+            text = "$temperature°",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            fontSize = 50.sp
+        )
         Text(
             modifier = Modifier.padding(vertical = 8.dp),
-            text = "Partly Cloudy",
+            text = weather,
             color = Color.White,
             fontSize = 25.sp
         )
         Row {
             Text(
                 modifier = Modifier.padding(horizontal = 16.dp),
-                text = "H: 75",
+                text = high,
                 color = Color.White
             )
-            Text(text = "L: 62", color = Color.White)
+            Text(text = low, color = Color.White)
         }
     }
 }
 
 @Composable
-private fun HourlyWeatherInfo() {
+private fun HourlyWeatherInfo(hourly: List<HourlyWeather>) {
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -205,20 +226,20 @@ private fun HourlyWeatherInfo() {
                     .fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 5.dp)
             ) {
-                items(count = 20) {
+                items(hourly, key = { it.hour }) { item ->
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
-                        Text(text = "Now", fontSize = 16.sp, color = Color.White)
+                        Text(text = item.hour, fontSize = 16.sp, color = Color.White)
                         Icon(
                             modifier = Modifier.size(30.dp),
                             painter = painterResource(R.drawable.cloud),
                             contentDescription = null,
                             tint = Color.White,
                         )
-                        Text(text = "72°", fontSize = 16.sp, color = Color.White)
+                        Text(text = "${item.temp}°", fontSize = 16.sp, color = Color.White)
                     }
                 }
             }
@@ -289,13 +310,13 @@ private fun WeaklyForecast() {
             .background(Color(0x4FFFFFFF), shape = RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
-        DayItemLayout("Monday", "L:52° H:62°")
-        DayItemLayout("Tuesday", "L:52° H:62°")
-        DayItemLayout("Wednesday", "L:52° H:62°")
-        DayItemLayout("Thursday", "L:52° H:62°")
-        DayItemLayout("Friday", "L:52° H:62°")
-        DayItemLayout("Saturday", "L:52° H:62°")
-        DayItemLayout("Sunday", "L:52° H:62°")
+        DayItemLayout("Monday", "L:52В° H:62В°")
+        DayItemLayout("Tuesday", "L:52В° H:62В°")
+        DayItemLayout("Wednesday", "L:52В° H:62В°")
+        DayItemLayout("Thursday", "L:52В° H:62В°")
+        DayItemLayout("Friday", "L:52В° H:62В°")
+        DayItemLayout("Saturday", "L:52В° H:62В°")
+        DayItemLayout("Sunday", "L:52В° H:62В°")
     }
 }
 
@@ -323,8 +344,5 @@ private fun DayItemLayout(day: String, weather: String) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    WeatherAppScreen(selectedCity = "San Francisco", onLocationClick = {})
-}
+
+
