@@ -7,7 +7,7 @@ data class WeatherState(
     val high: String = "H: 20",
     val low: String = "L: 11",
     val hForecast: List<HourlyWeather> = defaultHourlyForecast(),
-    val progressBar: Boolean = false
+    val isLoading: Boolean = true
 )
 
 data class HourlyWeather(

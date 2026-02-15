@@ -1,6 +1,5 @@
 ﻿package com.example.weatherapp
 
-import android.widget.ProgressBar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,21 +33,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun WeatherAppScreen(
     weather: WeatherState,
 
     onLocationClick: () -> Unit
-)
-{
-    Column(
+) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .background(
                 Brush.verticalGradient(
                     listOf(
@@ -61,16 +58,17 @@ fun WeatherAppScreen(
             .navigationBarsPadding()
             .imePadding()
     ) {
-        if (weather.progressBar) {
+        if (weather.isLoading) {
             LoadingExamples()
-        }
-        else {
-        EarthIconLayout()
-        SearchBarLayout(weather.city, onLocationClick)
-        TopWeatherInfo(weather.temperature, weather.weather, weather.high, weather.low)
-        HourlyWeatherInfo(weather.hForecast)
-        WeatherAdditionalInfo()
-        WeaklyForecast()
+        } else {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                EarthIconLayout()
+                SearchBarLayout(weather.city, onLocationClick)
+                TopWeatherInfo(weather.temperature, weather.weather, weather.high, weather.low)
+                HourlyWeatherInfo(weather.hForecast)
+                WeatherAdditionalInfo()
+                WeaklyForecast()
+            }
         }
     }
 }

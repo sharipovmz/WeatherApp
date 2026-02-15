@@ -40,6 +40,7 @@ fun NavExample() {
                         onBack = { backstack.removeLastOrNull() },
                         onCitySelected = { city ->
                             viewModel.setCity(city)
+                            viewModel.isLoad()
                             backstack.removeLastOrNull()
                         }
                     )
