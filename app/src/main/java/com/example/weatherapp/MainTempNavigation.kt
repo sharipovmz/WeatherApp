@@ -2,6 +2,7 @@ package com.example.weatherapp
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
@@ -36,12 +37,24 @@ fun NavExample() {
                     )
                 }
                 is CitySearchScreen -> NavEntry(key){
+                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    val citySelected = remember { androidx.compose.runtime.mutableStateOf(false) }
+
+                    LaunchedEffect(state.isLoading, citySelected.value) {
+                        if (citySelected.value && !state.isLoading) {
+                            backstack.removeLastOrNull()
+                            viewModel.isLoad()
+                        }
+                    }
+
                     SearchScreen(
+                        isLoading = state.isLoading,
                         onBack = { backstack.removeLastOrNull() },
+                        onQuerySearch = { viewModel.isLoad() },
                         onCitySelected = { city ->
                             viewModel.setCity(city)
-                            viewModel.isLoad()
-                            backstack.removeLastOrNull()
+                            //viewModel.isLoad()
+                            citySelected.value = true
                         }
                     )
                 }

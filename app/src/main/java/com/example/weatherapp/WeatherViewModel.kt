@@ -25,7 +25,7 @@ class WeatherViewModel : ViewModel() {
     fun isLoad() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            delay(2000)
+            delay(1000)
             _state.update { it.copy(isLoading = false) }
         }
     }

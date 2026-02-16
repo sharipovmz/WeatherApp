@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,12 +44,14 @@ import androidx.compose.ui.unit.sp
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenApp() {
-    SearchScreen(onBack = {}, onCitySelected = {})
+    SearchScreen(isLoading = false, onBack = {}, onQuerySearch = {}, onCitySelected = {})
 }
 
 @Composable
 fun SearchScreen(
+    isLoading: Boolean,
     onBack: () -> Unit,
+    onQuerySearch: () -> Unit,
     onCitySelected: (String) -> Unit
 ) {
     val queryState = remember { mutableStateOf("") }
@@ -57,32 +60,50 @@ fun SearchScreen(
         onCitySelected(city)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF55A7F5),
-                        Color(0xFFB9DDFF)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF55A7F5),
+                            Color(0xFFB9DDFF)
+                        )
                     )
                 )
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            SearchHeader(
+                query = queryState.value,
+                onQueryChange = {
+                    queryState.value = it
+                    if (it.isNotEmpty()) {
+                        onQuerySearch()
+                    }
+                },
+                onBack = onBack
             )
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        SearchHeader(
-            query = queryState.value,
-            onQueryChange = { queryState.value = it },
-            onBack = onBack
-        )
-        Spacer(modifier = Modifier.height(18.dp))
-        SearchHistoryCard(onCityClick = onCityClick)
-        Spacer(modifier = Modifier.height(16.dp))
-        PopularCitiesCard(onCityClick = onCityClick)
+            Spacer(modifier = Modifier.height(18.dp))
+            SearchHistoryCard(onCityClick = onCityClick)
+            Spacer(modifier = Modifier.height(16.dp))
+            PopularCitiesCard(onCityClick = onCityClick)
+        }
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0x80000000)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
     }
 }
 
