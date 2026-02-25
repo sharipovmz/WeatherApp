@@ -1,0 +1,68 @@
+package com.example.weatherapp.presentation.navigation
+
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import com.example.weatherapp.di.AppModule
+import com.example.weatherapp.presentation.search.SearchScreen
+import com.example.weatherapp.presentation.weather.WeatherAppScreen
+import com.example.weatherapp.presentation.weather.WeatherViewModel
+
+data object MainWeatherScreen
+data object CitySearchScreen
+
+@Composable
+fun NavExample() {
+    val backstack = remember { mutableStateListOf<Any>(MainWeatherScreen) }
+    val viewModel: WeatherViewModel = remember { AppModule.provideWeatherViewModel() }
+    NavDisplay(
+        backStack = backstack,
+        onBack = { backstack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        entryProvider = { key ->
+            when (key) {
+                is MainWeatherScreen -> NavEntry(key) {
+                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    WeatherAppScreen(
+                        weather = state,
+                        onLocationClick = { backstack.add(CitySearchScreen) }
+                    )
+                }
+                is CitySearchScreen -> NavEntry(key){
+                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    val citySelected = remember { mutableStateOf(false) }
+
+                    LaunchedEffect(state.isLoading, citySelected.value) {
+                        if (citySelected.value && !state.isLoading) {
+                            backstack.removeLastOrNull()
+                            viewModel.isLoad()
+                        }
+                    }
+
+                    SearchScreen(
+                        isLoading = state.isLoading,
+                        onBack = { backstack.removeLastOrNull() },
+                        onQuerySearch = { viewModel.isLoad() },
+                        onCitySelected = { city ->
+                            viewModel.setCity(city)
+                            citySelected.value = true
+                        }
+                    )
+                }
+                else -> NavEntry(Unit) { Text("Unknown route") }
+            }
+        }
+    )
+}
