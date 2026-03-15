@@ -28,8 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -41,23 +39,29 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.weatherapp.R
+import com.example.weatherapp.domain.model.City
 
 @Preview(showBackground = true)
 @Composable
 fun SearchScreenApp() {
-    SearchScreen(isLoading = false, onBack = {}, onQuerySearch = {}, onCitySelected = {})
+    SearchScreen(
+        uiState = SearchUiState(),
+        weatherIsLoading = false,
+        onBack = {},
+        onQueryChange = {},
+        onCitySelected = {}
+    )
 }
 
 @Composable
 fun SearchScreen(
-    isLoading: Boolean,
+    uiState: SearchUiState,
+    weatherIsLoading: Boolean,
     onBack: () -> Unit,
-    onQuerySearch: () -> Unit,
+    onQueryChange: (String) -> Unit,
     onCitySelected: (String) -> Unit
 ) {
-    val queryState = remember { mutableStateOf("") }
     val onCityClick = { city: String ->
-        queryState.value = city
         onCitySelected(city)
     }
 
@@ -80,22 +84,38 @@ fun SearchScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             SearchHeader(
-                query = queryState.value,
-                onQueryChange = {
-                    queryState.value = it
-                    if (it.isNotEmpty()) {
-                        onQuerySearch()
-                    }
-                },
+                query = uiState.query,
+                isSearchLoading = uiState.isLoading,
+                onQueryChange = onQueryChange,
                 onBack = onBack
             )
             Spacer(modifier = Modifier.height(18.dp))
-            SearchHistoryCard(onCityClick = onCityClick)
-            Spacer(modifier = Modifier.height(16.dp))
-            PopularCitiesCard(onCityClick = onCityClick)
+
+            if (uiState.query.isNotEmpty()) {
+                if (uiState.searchResults.isNotEmpty()) {
+                    SearchResultsCard(
+                        results = uiState.searchResults,
+                        query = uiState.query,
+                        onCityClick = onCityClick
+                    )
+                } else if (!uiState.isLoading) {
+                    NotFoundCard(query = uiState.query)
+                }
+            } else {
+                SearchHistoryCard(
+                    cities = uiState.searchHistory,
+                    onClearHistory = {},
+                    onCityClick = onCityClick
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                PopularCitiesCard(
+                    cities = uiState.popularCities,
+                    onCityClick = onCityClick
+                )
+            }
         }
 
-        if (isLoading) {
+        if (weatherIsLoading) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -111,6 +131,7 @@ fun SearchScreen(
 @Composable
 private fun SearchHeader(
     query: String,
+    isSearchLoading: Boolean,
     onQueryChange: (String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -138,6 +159,15 @@ private fun SearchHeader(
             onValueChange = onQueryChange,
             singleLine = true,
             placeholder = { Text(text = "Поиск города...", fontSize = 14.sp) },
+            trailingIcon = {
+                if (isSearchLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color(0xFF4D8DF7),
+                        strokeWidth = 2.dp
+                    )
+                }
+            },
             modifier = Modifier
                 .weight(1f)
                 .height(50.dp)
@@ -161,7 +191,69 @@ private fun SearchHeader(
 }
 
 @Composable
-private fun SearchHistoryCard(onCityClick: (String) -> Unit) {
+private fun SearchResultsCard(
+    results: List<City>,
+    query: String,
+    onCityClick: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FBFF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Результаты для \"$query\"",
+                color = Color(0xFF5B6B7C),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            results.forEach { city ->
+                SearchListItem(
+                    title = city.name,
+                    onClick = { onCityClick(city.name) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotFoundCard(query: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9FBFF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Город \"$query\" не найден",
+                color = Color(0xFF8B9BB0),
+                fontSize = 14.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SearchHistoryCard(
+    cities: List<City>,
+    onClearHistory: () -> Unit,
+    onCityClick: (String) -> Unit
+) {
+    if (cities.isEmpty()) return
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -193,30 +285,31 @@ private fun SearchHistoryCard(onCityClick: (String) -> Unit) {
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
+                    modifier = Modifier.clickable { onClearHistory() },
                     text = "Очистить",
                     color = Color(0xFF4D8DF7),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
-            SearchListItem(
-                title = "Los Angeles, CA",
-                highlight = false,
-                showRemove = false,
-                onClick = { onCityClick("Los Angeles, CA") }
-            )
-            SearchListItem(
-                title = "New York, NY",
-                highlight = true,
-                showRemove = true,
-                onClick = { onCityClick("New York, NY") }
-            )
+            cities.forEachIndexed { index, city ->
+                SearchListItem(
+                    title = city.name,
+                    highlight = index == cities.lastIndex,
+                    showRemove = index == cities.lastIndex,
+                    onClick = { onCityClick(city.name) }
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun PopularCitiesCard(onCityClick: (String) -> Unit) {
+private fun PopularCitiesCard(
+    cities: List<City>,
+    onCityClick: (String) -> Unit
+) {
+    if (cities.isEmpty()) return
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -235,13 +328,12 @@ private fun PopularCitiesCard(onCityClick: (String) -> Unit) {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            SearchListItem(title = "San Francisco, CA", onClick = { onCityClick("San Francisco, CA") })
-            SearchListItem(title = "New York, NY", onClick = { onCityClick("New York, NY") })
-            SearchListItem(title = "Los Angeles, CA", highlight = true, onClick = { onCityClick("Los Angeles, CA") })
-            SearchListItem(title = "Chicago, IL", onClick = { onCityClick("Chicago, IL") })
-            SearchListItem(title = "Miami, FL", onClick = { onCityClick("Miami, FL") })
-            SearchListItem(title = "Seattle, WA", onClick = { onCityClick("Seattle, WA") })
-            SearchListItem(title = "Austin, TX", onClick = { onCityClick("Austin, TX") })
+            cities.forEach { city ->
+                SearchListItem(
+                    title = city.name,
+                    onClick = { onCityClick(city.name) }
+                )
+            }
         }
     }
 }

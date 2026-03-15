@@ -13,7 +13,9 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.example.weatherapp.di.AppModule
+import com.example.weatherapp.presentation.search.SearchIntent
 import com.example.weatherapp.presentation.search.SearchScreen
+import com.example.weatherapp.presentation.search.SearchViewModel
 import com.example.weatherapp.presentation.weather.WeatherAppScreen
 import com.example.weatherapp.presentation.weather.WeatherViewModel
 
@@ -24,6 +26,7 @@ data object CitySearchScreen
 fun NavExample() {
     val backstack = remember { mutableStateListOf<Any>(MainWeatherScreen) }
     val viewModel: WeatherViewModel = remember { AppModule.provideWeatherViewModel() }
+    val searchViewModel: SearchViewModel = remember { AppModule.provideSearchViewModel() }
     NavDisplay(
         backStack = backstack,
         onBack = { backstack.removeLastOrNull() },
@@ -41,20 +44,24 @@ fun NavExample() {
                     )
                 }
                 is CitySearchScreen -> NavEntry(key){
-                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    val weatherState by viewModel.state.collectAsStateWithLifecycle()
+                    val searchState by searchViewModel.state.collectAsStateWithLifecycle()
                     val citySelected = remember { mutableStateOf(false) }
 
-                    LaunchedEffect(state.isLoading, citySelected.value) {
-                        if (citySelected.value && !state.isLoading) {
+                    LaunchedEffect(weatherState.isLoading, citySelected.value) {
+                        if (citySelected.value && !weatherState.isLoading) {
                             backstack.removeLastOrNull()
                             viewModel.isLoad()
                         }
                     }
 
                     SearchScreen(
-                        isLoading = state.isLoading,
+                        uiState = searchState,
+                        weatherIsLoading = weatherState.isLoading,
                         onBack = { backstack.removeLastOrNull() },
-                        onQuerySearch = { viewModel.isLoad() },
+                        onQueryChange = { query ->
+                            searchViewModel.handleIntent(SearchIntent.SearchCity(query))
+                        },
                         onCitySelected = { city ->
                             viewModel.setCity(city)
                             citySelected.value = true

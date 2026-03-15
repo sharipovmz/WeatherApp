@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Run Commands
 
-This is an Android project using Gradle 8.13 with AGP 8.13.2.
+Android project using Gradle 8.13, AGP 8.13.2, Kotlin 2.0.21. On Windows, use `gradlew.bat` instead of `./gradlew`.
 
 ```bash
 # Build debug APK
@@ -26,32 +26,47 @@ This is an Android project using Gradle 8.13 with AGP 8.13.2.
 ./gradlew clean
 ```
 
-On Windows, use `gradlew.bat` instead of `./gradlew`.
-
 ## Architecture
 
-**Single-module Android app** using MVVM with Jetpack Compose and Kotlin 2.0.21.
+**Single-module Android app** using Clean Architecture (MVVM) with Jetpack Compose and Material 3.
 
-- **UI Framework:** Jetpack Compose with Material 3
-- **Navigation:** AndroidX Navigation 3 (`androidx.navigation3`) with manual backstack management
-- **State Management:** `StateFlow` in ViewModel, observed via `collectAsStateWithLifecycle()`
+- **Navigation:** AndroidX Navigation 3 (`androidx.navigation3`) with manual backstack (`MutableStateList<Any>`) and `NavDisplay` with state/ViewModel preservation decorators
+- **State Management:** `MutableStateFlow<T>` in ViewModels, observed via `collectAsStateWithLifecycle()`
+- **DI:** Service Locator pattern via `AppModule` object (no Hilt/Koin) — lazy singletons for repository and use cases, factory methods for ViewModels
 - **SDK targets:** minSdk 24, compileSdk/targetSdk 36
 
-### Key Files
+### Package Structure
 
-All source code is in `com.example.weatherapp`:
+All source code is in `app/src/main/java/com/example/weatherapp/`:
 
-- `MainActivity.kt` — Entry point, launches `NavExample()` composable
-- `MainTempNavigation.kt` — Navigation setup with two routes: `MainWeatherScreen` and `CitySearchScreen`. Uses `NavDisplay` with state/ViewModel preservation decorators. The `WeatherViewModel` is shared across both screens.
-- `WeatherViewModel.kt` — Central state holder using `MutableStateFlow<WeatherState>`. Currently uses simulated loading (2s delay coroutine) with no real API integration.
-- `WeatherState.kt` — Data classes: `WeatherState` (city, temperature, weather, forecasts, loading flag) and `HourlyWeather`
-- `WeatherAppScreen.kt` — Main weather display (temperature, hourly forecast, weekly forecast, weather details grid)
-- `SearchScreen.kt` — City search with hardcoded history and popular cities list
+```
+├── MainActivity.kt              — Entry point, requests location permissions, launches NavExample()
+├── data/repository/             — Fake repository implementations (FakeCityRepositoryBack, FakeCityRepositoryMock)
+├── di/AppModule.kt              — Service locator: wires repository → use cases → ViewModels
+├── domain/model/City.kt         — Domain model
+├── domain/repository/           — CityRepository interface
+├── domain/usecase/              — LoadCityWeatherUseCase, SearchCitiesUseCase
+├── presentation/navigation/     — MainNavigation.kt: NavDisplay with two routes (MainWeatherScreen, CitySearchScreen)
+├── presentation/weather/        — WeatherViewModel, WeatherState, WeatherAppScreen composable
+├── presentation/search/         — SearchViewModel, SearchUiState, SearchIntent, SearchScreen composable
+├── temp/                        — Unused message interface stubs (experimental)
+└── ui/theme/                    — Material 3 theme, colors, typography
+```
 
 ### Data Flow
 
-User interaction → Navigation change / `ViewModel.setCity()` → `ViewModel.isLoad()` sets loading state → `StateFlow.update()` → UI recomposes via `collectAsStateWithLifecycle()`
+1. User interaction triggers navigation or ViewModel method
+2. ViewModel calls use case → repository (fake, with simulated delays)
+3. `StateFlow.update { ... }` emits new state
+4. Compose UI recomposes via `collectAsStateWithLifecycle()`
+
+### Key Design Decisions
+
+- **Shared WeatherViewModel:** Created once in `MainNavigation.kt` via `AppModule` and passed to both screens
+- **SearchViewModel:** Uses intent-based pattern (`SearchIntent` sealed class) for user actions
+- **Navigation 3:** Uses `rememberSaveableStateHolderNavEntryDecorator()` and `rememberViewModelStoreNavEntryDecorator()` for state preservation — this is a newer API, not the traditional NavHost pattern
+- **Kotlin Serialization:** Plugin enabled, used for route serialization (`@Serializable` data objects for routes)
 
 ### Current State
 
-This is a prototype with all weather data hardcoded/mocked. There is no network layer, database, or dependency injection. The app has two screens: weather display and city search.
+Prototype with all weather data mocked in fake repositories. No network layer (Retrofit), database (Room), or real DI framework. Two screens: weather display and city search.
