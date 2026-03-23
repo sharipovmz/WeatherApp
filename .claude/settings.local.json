@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__figma__generate_diagram",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Mahmudjon/ITRUN/WeatherApp/**)",
+      "Bash(done)",
+      "Bash(do)",
+      "Bash(echo \"=== $f ===\")",
+      "Bash(./gradlew assembleDebug)",
+      "Read(//c/Program Files/Eclipse Adoptium 2>/dev/**)",
+      "Read(//c/Program Files/Microsoft/**)",
+      "Read(//c/Program Files/Eclipse Adoptium/**)",
+      "Read(//c/Program Files/**)"
+    ]
+  }
+}

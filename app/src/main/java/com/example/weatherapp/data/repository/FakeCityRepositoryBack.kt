@@ -1,6 +1,7 @@
 package com.example.weatherapp.data.repository
 
 import com.example.weatherapp.domain.model.City
+import com.example.weatherapp.domain.model.Coordinates
 import com.example.weatherapp.domain.repository.CityRepository
 import kotlinx.coroutines.delay
 
@@ -30,6 +31,11 @@ class FakeCityRepositoryBack : CityRepository {
     override suspend fun loadCityWeather(city: String): Result<Unit> {
         delay(1000)
         return Result.success(Unit)
+    }
+
+    override suspend fun loadCityCoordinates(city: String): Result<Coordinates> {
+        delay(500)
+        return Result.success(Coordinates(lat = 34.0522, lon = -118.2437))
     }
 
     // ─────────────────────────────────────────────────────────────────────────
